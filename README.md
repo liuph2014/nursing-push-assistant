@@ -16,7 +16,7 @@ npm run dev
 
 ## 对外测试（Vercel + Neon）
 
-1. 访问生产地址（部署后写入此处）：`https://你的项目.vercel.app`
+1. 访问生产地址：<https://nursing-push-assistant.vercel.app>
 2. 用系统管理员登录：工号 `admin`，密码 `admin`
 3. 在「账号权限」中为测试同事创建工号与角色，自行设定密码后告知对方
 4. 患者端：护士端床位页展示的 HTTPS 床头码，用微信扫开
