@@ -1,0 +1,25 @@
+[Script Info]
+Title: Nursing Push Demo
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 2
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: SUB,Microsoft YaHei,26,&H00FFFFFF,&H000000FF,&H00102840,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,2,90,90,22,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:16.15,SUB,,0,0,0,,大家好。这是护理推送助手，宣武医院神经外科的演示版。我们把住院健康教育，\N做成可以交接、可以质控的护理作业，而不是再做一个内容网站。\N{\fs18\b0\c&HF4F0E8&}This is the Nursing Push Assistant, a Xuanwu neurosurgery demo. Inpatient education\Nbecomes a handoff-ready, auditable nursing workflow—not another content site.
+Dialogue: 0,0:00:16.15,0:00:31.89,SUB,,0,0,0,,医护从登录页进入作业台。测试期不发送真实验证码，选择护士长，\N点进入作业台即可。现场讲解时，也可以用顶部演示条切换身份。\N{\fs18\b0\c&HF4F0E8&}Clinicians enter from this login page. The demo sends no real SMS code. Choose Head\NNurse and continue. During a live talk, the top demo bar can switch roles.
+Dialogue: 0,0:00:31.89,0:00:48.66,SUB,,0,0,0,,进来以后，护士站主界面是床位图。八张床能看到患者、护理等级和标记色点。\N责任护士只能操作自己分管的床，这是和全科宣教工具的分界。\N{\fs18\b0\c&HF4F0E8&}The nurse station opens on a bed map. Eight beds show the patient, nursing level, and tag colors.\NPrimary nurses act only on assigned beds—the line versus a ward-wide education tool.
+Dialogue: 0,0:00:48.66,0:01:08.60,SUB,,0,0,0,,打开一床。点套用普通入院路径，就会生成两篇待学习：入院须知，和防跌倒宣教。\N右侧是床头码，和患者链接是同一条。档案里还能维护诊断、手术日和责任床。\N{\fs18\b0\c&HF4F0E8&}Open bed one. Apply the admission pathway to create two tasks: admission notes and fall prevention. The QR\Non the right is the same patient link. The chart still holds diagnosis, surgery date, and assignment.
+Dialogue: 0,0:01:08.60,0:01:21.94,SUB,,0,0,0,,患者用微信扫床头码，或在电脑上打开同一条链接。\N先阅读健康教育知情提示。同意之后，才进入宣教内容。\N{\fs18\b0\c&HF4F0E8&}The patient scans the bedside code, or opens the same link on a computer.\NThey read the education consent notice first, then enter the materials.
+Dialogue: 0,0:01:21.94,0:01:36.74,SUB,,0,0,0,,待学习里出现两篇。请把入院须知读满大约八秒，系统才记为有效阅读。\N防跌倒这篇请故意不读，用来留下一个护理缺口。\N{\fs18\b0\c&HF4F0E8&}Two items appear in the inbox. Stay on admission notes for about eight seconds to count\Nas effective reading. Leave fall prevention unread, so a nursing gap remains.
+Dialogue: 0,0:01:36.74,0:01:51.28,SUB,,0,0,0,,打开入院须知后，顶部会提示还要停留几秒。停满阈值，\N护士站就把这篇记成已读。中途退出、时间不够，仍然算未读。\N{\fs18\b0\c&HF4F0E8&}A timer at the top counts remaining seconds. When the threshold is met,\Nthe nurse station marks it read. Leaving early still counts as unread.
+Dialogue: 0,0:01:51.28,0:02:06.59,SUB,,0,0,0,,没读完的内容，进入今日任务的当面补讲。护士到床旁讲完，点已当面完成，\N这条作业就闭环了。推了但没人看，不再是一个没人接的缺口。\N{\fs18\b0\c&HF4F0E8&}Unread items enter today's bedside teaching list. After a face-to-face talk, tap completed,\Nand the loop is closed. Pushed-but-unread is no longer an unowned gap.
+Dialogue: 0,0:02:06.59,0:02:23.82,SUB,,0,0,0,,需要精准推送时，先选图文，再按标记组圈人。比如只把糖尿病饮食，\N发给打了这个标记的患者，而不必全科群发。责任护士默认也只能推自己的床。\N{\fs18\b0\c&HF4F0E8&}For targeted teaching, pick an article, then filter by tag group. Send diabetes diet only\Nto tagged patients, not the whole ward. Primary nurses default to their own beds.
+Dialogue: 0,0:02:23.82,0:02:39.08,SUB,,0,0,0,,智能计划一次设定，长期有效。把高危跌倒的患者圈进来，锚点选首次扫码，\N当天就会自动收到防跌倒宣教，护士不必每人点一次发送。\N{\fs18\b0\c&HF4F0E8&}Plans are set once and stay on. Tag high fall-risk patients, anchor on first\Nscan, and fall prevention is delivered that day—no per-patient send.
+Dialogue: 0,0:02:39.08,0:02:55.51,SUB,,0,0,0,,最后看护理部看板。今日新增、有效阅读、未读人数会对上刚才的操作。\N下面还有入院包二十四小时完成率，方便交班和质控把成果带走。\N{\fs18\b0\c&HF4F0E8&}Finally the nursing board. New enrollments, effective reads, and unread counts match what\Nwe just did. Twenty-four-hour pathway completion supports handover and quality control.
+Dialogue: 0,0:02:55.51,0:03:07.43,SUB,,0,0,0,,这一版跑通的是作业闭环。微信小程序、\N医院信息系统和咨询问答，不在本演示里。感谢观看。\N{\fs18\b0\c&HF4F0E8&}This build proves the work loop. WeChat mini program, HIS,\Nand consult Q and A are out of scope here. Thank you.

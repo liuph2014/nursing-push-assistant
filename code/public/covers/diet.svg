@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
+  <rect width="600" height="800" fill="#1A7A72"/>
+  <circle cx="460" cy="640" r="120" fill="#ffffff" opacity="0.1"/>
+  <rect x="90" y="250" width="420" height="260" rx="28" fill="#ffffff" opacity="0.16"/>
+  <text x="300" y="370" text-anchor="middle" fill="#fff" font-size="48" font-family="sans-serif" font-weight="700">糖尿病饮食</text>
+  <text x="300" y="445" text-anchor="middle" fill="#E6F6F4" font-size="24" font-family="sans-serif">定时定量 · 防低血糖</text>
+</svg>

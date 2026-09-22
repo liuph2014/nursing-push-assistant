@@ -1,0 +1,21 @@
+# 根仓库忽略项（应用代码目录另有 code/.gitignore）
+
+**/node_modules/
+**/.next/
+**/.env
+**/.env.local
+**/.env*.local
+!**/.env.example
+**/.vercel/
+**/.pgdata/
+**/nursing-demo-pglite/
+
+# 大体积演示素材（不上 GitHub）
+*.mp4
+护理推送助手-演示讲解.srt
+护理推送助手-使用者说明.pptx
+
+# 系统
+.DS_Store
+Thumbs.db
+*.tsbuildinfo

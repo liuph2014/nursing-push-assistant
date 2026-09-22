@@ -1,0 +1,334 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  head_nurse
+  primary_nurse
+  nursing_admin
+  qa_readonly
+  sys_admin
+}
+
+enum TaskStatus {
+  pending
+  delivered
+  read
+  done
+}
+
+enum StayStatus {
+  in_ward
+  discharged
+}
+
+model Tenant {
+  id   String @id
+  name String
+}
+
+model OrgNode {
+  id       String  @id
+  name     String
+  kind     String
+  parentId String?
+  sortOrder Int    @default(0)
+}
+
+model DemoState {
+  id        String @id
+  dayOffset Int    @default(0)
+}
+
+model EducationSettings {
+  id                 String  @id
+  autoDischargeDays  Int     @default(30)
+  hotline            String  @default("010-83198318")
+  hotlineLabel       String  @default("病区热线")
+  consultEnabled     Boolean @default(false)
+  requireIntakeForm  Boolean @default(false)
+  requirePushConfirm Boolean @default(false)
+  consentText        String  @default("")
+  diseaseZoneName    String  @default("脑梗死专区")
+  diseaseZoneTagId   String  @default("tag-stroke")
+}
+
+model InviteLink {
+  id        String   @id
+  token     String   @unique
+  role      String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model StaffNurse {
+  id          String           @id
+  name        String
+  title       String           @default("责任护士")
+  bedsLabel   String           @default("")
+  assignments ExamAssignment[]
+  responses   SurveyResponse[]
+}
+
+model ExamAssignment {
+  id               String          @id @default(cuid())
+  questionnaireId  String
+  questionnaire    Questionnaire   @relation(fields: [questionnaireId], references: [id])
+  nurseId          String
+  nurse            StaffNurse      @relation(fields: [nurseId], references: [id])
+  sentAt           DateTime        @default(now())
+  sentBy           String
+  status           String          @default("pending")
+  responses        SurveyResponse[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  at        DateTime @default(now())
+  actorRole String
+  action    String
+  target    String
+  detail    String   @default("")
+}
+
+model TagGroup {
+  id       String     @id
+  name     String
+  color    String
+  stayTags StayTag[]
+  plans    PushPlan[]
+}
+
+model Category {
+  id        String    @id
+  name      String
+  sortOrder Int
+  articles  Article[]
+}
+
+model Article {
+  id           String         @id
+  slug         String         @unique
+  title        String
+  summary      String
+  body         String
+  sortOrder    Int
+  categoryId   String?
+  category     Category?      @relation(fields: [categoryId], references: [id])
+  keywords     String         @default("")
+  scope        String         @default("department")
+  mediaType    String         @default("richtext")
+  mediaUrl     String         @default("")
+  status       String         @default("published")
+  changeLog    String         @default("")
+  tasks        PushTask[]
+  pathwayItems PathwayItem[]
+  plans        PushPlan[]
+  jobs         PushJob[]
+}
+
+model Questionnaire {
+  id             String           @id
+  title          String
+  description    String
+  questionsJson  String
+  gradeJson      String
+  isExam         Boolean          @default(false)
+  items          PathwayItem[]
+  responses      SurveyResponse[]
+  tasks          PushTask[]
+  jobs           PushJob[]
+  assignments    ExamAssignment[]
+}
+
+model SurveyResponse {
+  id               String         @id @default(cuid())
+  stayId           String?
+  stay             Stay?          @relation(fields: [stayId], references: [id], onDelete: SetNull)
+  questionnaireId  String
+  questionnaire    Questionnaire  @relation(fields: [questionnaireId], references: [id])
+  taskId           String?
+  answersJson      String
+  score            Int            @default(0)
+  grade            String         @default("")
+  submittedAt      DateTime       @default(now())
+  respondentRole   String         @default("patient")
+  respondentName   String         @default("")
+  assignmentId     String?
+  assignment       ExamAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  nurseId          String?
+  nurse            StaffNurse?    @relation(fields: [nurseId], references: [id], onDelete: SetNull)
+  rawScore         Int            @default(0)
+  maxScore         Int            @default(0)
+  detailJson       String         @default("")
+}
+
+model Pathway {
+  id     String         @id
+  name   String
+  kind   String
+  status String         @default("active")
+  items  PathwayItem[]
+  stays  StayPathway[]
+}
+
+model PathwayItem {
+  id               String          @id
+  pathwayId        String
+  pathway          Pathway         @relation(fields: [pathwayId], references: [id], onDelete: Cascade)
+  offsetDays       Int             @default(0)
+  contentType      String
+  articleId        String?
+  article          Article?        @relation(fields: [articleId], references: [id])
+  questionnaireId  String?
+  questionnaire    Questionnaire?  @relation(fields: [questionnaireId], references: [id])
+  noticeBody       String          @default("")
+  bedsideRequired  Boolean         @default(false)
+  sortOrder        Int
+}
+
+model StayPathway {
+  id         String   @id @default(cuid())
+  stayId     String
+  stay       Stay     @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  pathwayId  String
+  pathway    Pathway  @relation(fields: [pathwayId], references: [id])
+  appliedAt  DateTime @default(now())
+
+  @@unique([stayId, pathwayId])
+}
+
+model StaffAccount {
+  id           String @id
+  name         String
+  role         Role
+  passwordHash String
+  bedsLabel    String @default("")
+  beds         Bed[]
+}
+
+model Bed {
+  id             String        @id
+  code           Int           @unique
+  patientName    String
+  primaryNurseId String?
+  assignedNurse  StaffAccount? @relation(fields: [primaryNurseId], references: [id])
+  stay           Stay?
+}
+
+model Stay {
+  id                 String            @id
+  bedId              String            @unique
+  bed                Bed               @relation(fields: [bedId], references: [id])
+  accessToken        String            @unique
+  status             StayStatus        @default(in_ward)
+  admittedAt         DateTime
+  surgeryAt          DateTime?
+  dischargedAt       DateTime?
+  firstScanAt        DateTime?
+  consentAcceptedAt  DateTime?
+  pathwayAppliedAt   DateTime?
+  intakeFilledAt     DateTime?
+  diagnosis          String            @default("")
+  gender             String            @default("")
+  age                Int               @default(0)
+  hospitalNo         String            @default("")
+  nursingLevel       String            @default("")
+  dietOrder          String            @default("")
+  allergy            String            @default("")
+  contactName        String            @default("")
+  contactPhone       String            @default("")
+  tasks              PushTask[]
+  tags               StayTag[]
+  responses          SurveyResponse[]
+  pathways           StayPathway[]
+}
+
+model StayTag {
+  stayId     String
+  tagGroupId String
+  stay       Stay      @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  tagGroup   TagGroup  @relation(fields: [tagGroupId], references: [id])
+
+  @@id([stayId, tagGroupId])
+}
+
+model PushJob {
+  id               String          @id @default(cuid())
+  contentType      String
+  articleId        String?
+  article          Article?        @relation(fields: [articleId], references: [id])
+  questionnaireId  String?
+  questionnaire    Questionnaire?  @relation(fields: [questionnaireId], references: [id])
+  noticeBody       String          @default("")
+  filterJson       String
+  scheduleAt       DateTime?
+  status           String          @default("sent")
+  createdBy        String
+  createdAt        DateTime        @default(now())
+  statsSent        Int             @default(0)
+  statsRead        Int             @default(0)
+  tasks            PushTask[]
+}
+
+model PushPlan {
+  id          String     @id
+  name        String
+  enabled     Boolean    @default(true)
+  tagGroupId  String
+  tagGroup    TagGroup   @relation(fields: [tagGroupId], references: [id])
+  articleId   String
+  article     Article    @relation(fields: [articleId], references: [id])
+  anchor      String
+  offsetDays  Int        @default(0)
+  lastRunAt   DateTime?
+  tasks       PushTask[]
+}
+
+model PushTask {
+  id               String          @id @default(cuid())
+  stayId           String
+  stay             Stay            @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  articleId        String?
+  article          Article?        @relation(fields: [articleId], references: [id])
+  questionnaireId  String?
+  questionnaire    Questionnaire?  @relation(fields: [questionnaireId], references: [id])
+  noticeBody       String          @default("")
+  contentType      String          @default("article")
+  sourceType       String          @default("pathway")
+  sourceId         String          @default("")
+  status           TaskStatus      @default(delivered)
+  dueAt            DateTime
+  dwellMs          Int             @default(0)
+  effectiveReadAt  DateTime?
+  bedsideDoneAt    DateTime?
+  bedsideRequired  Boolean         @default(false)
+  noticeAckAt      DateTime?
+  lastHeartbeatAt  DateTime?
+  deliveryCount    Int             @default(1)
+  assignedPrimary  Boolean         @default(false)
+  jobId            String?
+  job              PushJob?       @relation(fields: [jobId], references: [id])
+  planId           String?
+  plan             PushPlan?      @relation(fields: [planId], references: [id])
+  readEvents       ReadEvent[]
+}
+
+model ReadEvent {
+  id         String   @id @default(cuid())
+  taskId     String
+  task       PushTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  durationMs Int
+  occurredAt DateTime @default(now())
+}
