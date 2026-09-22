@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { sessionCookieOptions, signSession, SESSION_COOKIE } from "@/lib/token";
 import { homeForRole } from "@/lib/demo";
+import { normalizeStaffId } from "@/lib/staff-id";
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { staffNo?: string; password?: string };
-  const staffNo = (body.staffNo || "").trim();
+  const staffNo = normalizeStaffId(body.staffNo || "");
   const password = body.password || "";
   if (!staffNo || !password) {
     return NextResponse.json({ error: "请填写工号和密码" }, { status: 400 });

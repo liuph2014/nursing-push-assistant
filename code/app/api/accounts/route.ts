@@ -5,6 +5,7 @@ import { ASSIGNABLE_ROLES, canManageAccounts, isRole, type Role } from "@/lib/de
 import { hashPassword } from "@/lib/password";
 import { writeAudit } from "@/lib/audit";
 import { revalidateNurse } from "@/lib/revalidate";
+import { isValidStaffId, normalizeStaffId, STAFF_ID_RULE_HINT } from "@/lib/staff-id";
 
 async function syncStaffNurse(id: string, name: string, role: Role, bedsLabel: string) {
   if (role === "primary_nurse") {
@@ -47,13 +48,13 @@ export async function POST(req: Request) {
     password?: string;
     bedsLabel?: string;
   };
-  const id = (body.id || "").trim().toLowerCase();
+  const id = normalizeStaffId(body.id || "");
   const name = (body.name || "").trim();
   const password = body.password || "";
   const bedsLabel = (body.bedsLabel || "").trim();
   const role = body.role;
-  if (!/^[a-z][a-z0-9_-]{0,31}$/.test(id)) {
-    return NextResponse.json({ error: "工号仅允许小写字母开头，含字母数字下划线，最长 32 位" }, { status: 400 });
+  if (!isValidStaffId(id)) {
+    return NextResponse.json({ error: STAFF_ID_RULE_HINT }, { status: 400 });
   }
   if (!name) return NextResponse.json({ error: "请填写姓名" }, { status: 400 });
   if (!password || password.length < 4) return NextResponse.json({ error: "密码至少 4 位" }, { status: 400 });

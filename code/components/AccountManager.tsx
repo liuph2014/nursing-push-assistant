@@ -35,9 +35,21 @@ export function AccountManager({ accounts, selfId }: { accounts: AccountRow[]; s
 
   return (
     <div className="space-y-6">
+      {msg ? (
+        <p
+          className={`rounded-xl px-4 py-3 text-sm ${
+            msg.startsWith("已") ? "bg-teal/10 text-teal" : "bg-[#D32F2F]/10 text-[#D32F2F]"
+          }`}
+          role="status"
+        >
+          {msg}
+        </p>
+      ) : null}
       <section className="surface rounded-2xl p-5">
         <h2 className="font-semibold text-navy">新建账号</h2>
-        <p className="mt-1 text-sm text-slate-500">工号即登录名。责任护士请填写分管床位说明，如「1–2 床」。</p>
+        <p className="mt-1 text-sm text-slate-500">
+          工号即登录名，支持院内数字工号（如 2211379）。责任护士请填写分管床位说明，如「1–2 床」。
+        </p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="block text-sm">
             工号
@@ -45,7 +57,7 @@ export function AccountManager({ accounts, selfId }: { accounts: AccountRow[]; s
               className="mt-1 w-full rounded border px-3 py-2"
               value={create.id}
               onChange={(e) => setCreate({ ...create, id: e.target.value })}
-              placeholder="如 zhang"
+              placeholder="如 2211379"
             />
           </label>
           <label className="block text-sm">
@@ -237,7 +249,6 @@ export function AccountManager({ accounts, selfId }: { accounts: AccountRow[]; s
           })}
         </ul>
       </section>
-      {msg ? <p className="text-sm text-teal">{msg}</p> : null}
     </div>
   );
 }

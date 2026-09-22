@@ -13,6 +13,11 @@ function isPublic(pathname: string) {
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  if (pathname === "/login" || pathname.startsWith("/login/")) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/app/login";
+    return NextResponse.redirect(url);
+  }
   if (pathname.startsWith("/api/demo")) {
     return NextResponse.json({ error: "演示接口已关闭" }, { status: 404 });
   }
