@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && node scripts/sync-db.mjs && next build",
-    "start": "node scripts/sync-db.mjs && next start",
+    "start": "node scripts/sync-db.mjs && next start --hostname 0.0.0.0",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:up": "docker compose up -d",
