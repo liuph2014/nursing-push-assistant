@@ -117,4 +117,4 @@ docker compose restart nginx
 | [`.env.example`](.env.example) | 环境变量模板（复制为 `.env`） |
 | [`nginx.conf`](nginx.conf) | 默认仅 HTTP + ACME |
 | [`nginx-ssl.conf.example`](nginx-ssl.conf.example) | HTTPS 示例 |
-| [`../code/Dockerfile`](../code/Dockerfile) | Next 镜像 |
+| [`../deploy/Dockerfile`](../deploy/Dockerfile) | Next 镜像（ECS Compose 用；不放在 `code/` 以免 Zeabur 误用） |

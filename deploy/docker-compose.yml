@@ -22,7 +22,7 @@ services:
   web:
     build:
       context: ../code
-      dockerfile: Dockerfile
+      dockerfile: ../deploy/Dockerfile
       args:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://ininurse.cn}
     restart: unless-stopped
