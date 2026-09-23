@@ -11,11 +11,21 @@ function canPushDatabase() {
   }
 }
 
+// Zeabur image build runs outside the cluster — private Postgres host is unreachable (P1001).
+const isZeaburBuild =
+  Boolean(process.env.ZEABUR) && process.env.npm_lifecycle_event === "build";
+
 const shouldTry =
   process.env.VERCEL || process.env.ZEABUR || process.env.USE_PGLITE === "0";
 
-if (shouldTry && canPushDatabase()) {
+if (isZeaburBuild) {
+  console.warn(
+    "[sync-db] skip prisma db push during Zeabur image build (cluster DB not reachable)",
+  );
+} else if (shouldTry && canPushDatabase()) {
   execSync("npx prisma db push", { stdio: "inherit" });
 } else if (shouldTry) {
-  console.warn("[sync-db] skip prisma db push: DATABASE_URL not ready for build/runtime yet");
+  console.warn(
+    "[sync-db] skip prisma db push: DATABASE_URL not ready for build/runtime yet",
+  );
 }
