@@ -14,7 +14,7 @@ npm run dev
 
 首次打开空库会自动写入 8 床种子与账号。恢复种子：`npm run db:reset`。
 
-## 对外测试（Vercel + Neon）
+## 对外测试（当前：Vercel + Neon）
 
 1. 访问生产地址：<https://nursing-push-assistant.vercel.app>
 2. 用系统管理员登录：工号 `admin`，密码 `admin`
@@ -34,6 +34,16 @@ npm run dev
 Root Directory 设为 `code`。Build：`prisma generate && node scripts/sync-db.mjs && next build`（会 `db push`，不会每次清空数据）。
 
 改完 `NEXT_PUBLIC_APP_URL` 后必须再部署一次，床头码才会指向公网 HTTPS。
+
+## 香港 ECS + Docker（推荐中长期 / 未备案）
+
+未 ICP 备案时，用阿里云**中国香港**轻量/ECS + Docker 绑定域名（如 `ininurse.cn`），大陆访问优于 `*.vercel.app`。
+
+编排与步骤见 **[`deploy/README.md`](deploy/README.md)**（含 `Dockerfile`、Compose、Nginx、证书说明）。
+
+## Zeabur 临时试用（免 VPN、接近一键）
+
+给同事先测、尚未备案时，可用 Zeabur（香港/新加坡）从 GitHub 部署。逐步说明见 **[`deploy/zeabur.md`](deploy/zeabur.md)**。
 
 ## 测试同事验收清单
 
