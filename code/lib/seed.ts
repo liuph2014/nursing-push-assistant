@@ -331,6 +331,8 @@ export async function resetDemoData() {
       consentText: "护士将通过本页向您推送住院期间的健康教育内容。内容仅供了解住院注意事项，不能替代当面指导。",
       diseaseZoneName: "脑梗死专区",
       diseaseZoneTagId: "tag-stroke",
+      effectiveReadSeconds: 8,
+      wardJoinToken: "demo-ward",
     },
   });
   await prisma.inviteLink.create({
@@ -360,6 +362,7 @@ export async function resetDemoData() {
   await prisma.tagGroup.createMany({
     data: [
       { id: "tag-stroke", name: "病种-脑梗死", color: "#C45C26" },
+      { id: "tag-aneurysm", name: "病种-动脉瘤", color: "#D32F2F" },
       { id: "tag-surgery", name: "手术", color: "#0F3A5F" },
       { id: "tag-fall", name: "高危跌倒", color: "#D32F2F" },
       { id: "tag-diabetes", name: "糖尿病饮食", color: "#1A7A72" },
@@ -433,12 +436,25 @@ export async function resetDemoData() {
         mediaUrl: "/covers/rehab.svg",
       },
       {
+        id: "art-aneurysm",
+        slug: "aneurysm-care",
+        title: "动脉瘤围手术期注意",
+        summary: "血压平稳、避免用力与情绪激动。",
+        body: "动脉瘤患者请遵医嘱监测血压，避免突然用力、屏气和情绪大幅波动。有头痛加重、呕吐或意识改变请立即呼叫护士。",
+        sortOrder: 6,
+        categoryId: "cat-disease",
+        keywords: "动脉瘤,血压",
+        scope: "department",
+        mediaType: "text",
+        mediaUrl: "",
+      },
+      {
         id: "art-hand",
         slug: "hand-hygiene",
         title: "洗手与感染预防",
         summary: "公共库文章，引用后发布到本科。",
         body: ARTICLE_HAND,
-        sortOrder: 6,
+        sortOrder: 5,
         categoryId: "cat-nurse",
         keywords: "洗手,感染",
         scope: "public_lib",
@@ -451,7 +467,7 @@ export async function resetDemoData() {
         title: "出院带药说明",
         summary: "院内共享，其他科室可引用。",
         body: ARTICLE_MED,
-        sortOrder: 5,
+        sortOrder: 4,
         categoryId: "cat-discharge",
         keywords: "出院,用药",
         scope: "hospital",
