@@ -177,6 +177,11 @@ export function WardSearch({ beds, today }: { beds: WardCard[]; today: string })
   const [allergy, setAllergy] = useState(searchParams.get("alg") ?? "");
   const [tag, setTag] = useState(searchParams.get("tag") ?? "");
   const [unreadOnly, setUnreadOnly] = useState(searchParams.get("unread") === "1");
+  const [census, setCensus] = useState<"in" | "out" | "all">(() => {
+    const v = searchParams.get("census");
+    if (v === "out" || v === "all" || v === "in") return v;
+    return "in";
+  });
 
   function apply(
     patch: Partial<{
@@ -187,6 +192,7 @@ export function WardSearch({ beds, today }: { beds: WardCard[]; today: string })
       diagnosis: string;
       surgery: string;
       stay: string;
+      census: "in" | "out" | "all";
       diet: string;
       allergy: string;
       tag: string;
@@ -205,6 +211,7 @@ export function WardSearch({ beds, today }: { beds: WardCard[]; today: string })
       allergy: patch.allergy ?? allergy,
       tag: patch.tag ?? tag,
       unreadOnly: patch.unreadOnly ?? unreadOnly,
+      census: patch.census ?? census,
     };
     if (patch.q !== undefined) setQ(next.q);
     if (patch.open !== undefined) setOpen(next.open);
@@ -217,6 +224,7 @@ export function WardSearch({ beds, today }: { beds: WardCard[]; today: string })
     if (patch.allergy !== undefined) setAllergy(next.allergy);
     if (patch.tag !== undefined) setTag(next.tag);
     if (patch.unreadOnly !== undefined) setUnreadOnly(next.unreadOnly);
+    if (patch.census !== undefined) setCensus(next.census);
 
     const params = new URLSearchParams();
     if (next.q.trim()) params.set("q", next.q.trim());
@@ -230,13 +238,24 @@ export function WardSearch({ beds, today }: { beds: WardCard[]; today: string })
     if (next.allergy) params.set("alg", next.allergy);
     if (next.tag) params.set("tag", next.tag);
     if (next.unreadOnly) params.set("unread", "1");
+    if (next.census !== "in") params.set("census", next.census);
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
   const afterQ = useMemo(() => beds.filter((b) => matchesQ(b, q, today)), [beds, q, today]);
+  const censusCounts = useMemo(
+    () => ({
+      in: afterQ.filter((b) => !b.discharged).length,
+      out: afterQ.filter((b) => b.discharged).length,
+      all: afterQ.length,
+    }),
+    [afterQ],
+  );
   const filtered = useMemo(() => {
     return afterQ.filter((b) => {
+      if (census === "in" && b.discharged) return false;
+      if (census === "out" && !b.discharged) return false;
       if (level && b.nursingLevel !== level) return false;
       if (diagnosis && b.diagnosis !== diagnosis) return false;
       if (surgery && surgeryBucket(b, today) !== surgery) return false;
@@ -248,7 +267,7 @@ export function WardSearch({ beds, today }: { beds: WardCard[]; today: string })
       if (unreadOnly && b.unread <= 0) return false;
       return true;
     });
-  }, [afterQ, level, diagnosis, surgery, stay, diet, allergy, tag, unreadOnly, today]);
+  }, [afterQ, census, level, diagnosis, surgery, stay, diet, allergy, tag, unreadOnly, today]);
 
   const diagnoses = useMemo(() => [...new Set(afterQ.map((b) => b.diagnosis).filter(Boolean))].sort(), [afterQ]);
   const diets = useMemo(() => [...new Set(afterQ.map((b) => b.dietOrder).filter(Boolean))].sort(), [afterQ]);
@@ -346,6 +365,18 @@ export function WardSearch({ beds, today }: { beds: WardCard[]; today: string })
         </button>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-slate-500">在院管理</span>
+        <Chip on={census === "in"} onClick={() => apply({ census: "in" })}>
+          在院 {censusCounts.in}
+        </Chip>
+        <Chip on={census === "out"} onClick={() => apply({ census: "out" })}>
+          已出院 {censusCounts.out}
+        </Chip>
+        <Chip on={census === "all"} onClick={() => apply({ census: "all" })}>
+          全部 {censusCounts.all}
+        </Chip>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-slate-500">快捷查看</span>
         <Chip
           on={surgery === "今日手术"}
