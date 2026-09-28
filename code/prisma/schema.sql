@@ -49,6 +49,8 @@ CREATE TABLE "public"."EducationSettings" (
     "consentText" TEXT NOT NULL DEFAULT '',
     "diseaseZoneName" TEXT NOT NULL DEFAULT '脑梗死专区',
     "diseaseZoneTagId" TEXT NOT NULL DEFAULT 'tag-stroke',
+    "effectiveReadSeconds" INTEGER NOT NULL DEFAULT 8,
+    "wardJoinToken" TEXT NOT NULL DEFAULT 'demo-ward',
 
     CONSTRAINT "EducationSettings_pkey" PRIMARY KEY ("id")
 );
@@ -71,6 +73,28 @@ CREATE TABLE "public"."Notification" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."StaffNurse" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL DEFAULT '责任护士',
+    "bedsLabel" TEXT NOT NULL DEFAULT '',
+
+    CONSTRAINT "StaffNurse_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."ExamAssignment" (
+    "id" TEXT NOT NULL,
+    "questionnaireId" TEXT NOT NULL,
+    "nurseId" TEXT NOT NULL,
+    "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "sentBy" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+
+    CONSTRAINT "ExamAssignment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -120,28 +144,6 @@ CREATE TABLE "public"."Article" (
     "changeLog" TEXT NOT NULL DEFAULT '',
 
     CONSTRAINT "Article_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."StaffNurse" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "title" TEXT NOT NULL DEFAULT '责任护士',
-    "bedsLabel" TEXT NOT NULL DEFAULT '',
-
-    CONSTRAINT "StaffNurse_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."ExamAssignment" (
-    "id" TEXT NOT NULL,
-    "questionnaireId" TEXT NOT NULL,
-    "nurseId" TEXT NOT NULL,
-    "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "sentBy" TEXT NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'pending',
-
-    CONSTRAINT "ExamAssignment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -255,8 +257,21 @@ CREATE TABLE "public"."Stay" (
     "allergy" TEXT NOT NULL DEFAULT '',
     "contactName" TEXT NOT NULL DEFAULT '',
     "contactPhone" TEXT NOT NULL DEFAULT '',
+    "attendingDoctor" TEXT NOT NULL DEFAULT '',
+    "bedDoctor" TEXT NOT NULL DEFAULT '',
 
     CONSTRAINT "Stay_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."PatientMessage" (
+    "id" TEXT NOT NULL,
+    "stayId" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "fromPatient" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PatientMessage_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -278,6 +293,7 @@ CREATE TABLE "public"."PushJob" (
     "scheduleAt" TIMESTAMP(3),
     "status" TEXT NOT NULL DEFAULT 'sent',
     "createdBy" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL DEFAULT '',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "statsSent" INTEGER NOT NULL DEFAULT 0,
     "statsRead" INTEGER NOT NULL DEFAULT 0,
@@ -354,6 +370,12 @@ CREATE UNIQUE INDEX "Stay_bedId_key" ON "public"."Stay"("bedId");
 CREATE UNIQUE INDEX "Stay_accessToken_key" ON "public"."Stay"("accessToken");
 
 -- AddForeignKey
+ALTER TABLE "public"."ExamAssignment" ADD CONSTRAINT "ExamAssignment_questionnaireId_fkey" FOREIGN KEY ("questionnaireId") REFERENCES "public"."Questionnaire"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."ExamAssignment" ADD CONSTRAINT "ExamAssignment_nurseId_fkey" FOREIGN KEY ("nurseId") REFERENCES "public"."StaffNurse"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Article" ADD CONSTRAINT "Article_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "public"."Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -361,6 +383,12 @@ ALTER TABLE "public"."SurveyResponse" ADD CONSTRAINT "SurveyResponse_stayId_fkey
 
 -- AddForeignKey
 ALTER TABLE "public"."SurveyResponse" ADD CONSTRAINT "SurveyResponse_questionnaireId_fkey" FOREIGN KEY ("questionnaireId") REFERENCES "public"."Questionnaire"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."SurveyResponse" ADD CONSTRAINT "SurveyResponse_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "public"."ExamAssignment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."SurveyResponse" ADD CONSTRAINT "SurveyResponse_nurseId_fkey" FOREIGN KEY ("nurseId") REFERENCES "public"."StaffNurse"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."PathwayItem" ADD CONSTRAINT "PathwayItem_pathwayId_fkey" FOREIGN KEY ("pathwayId") REFERENCES "public"."Pathway"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -382,6 +410,9 @@ ALTER TABLE "public"."Bed" ADD CONSTRAINT "Bed_primaryNurseId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "public"."Stay" ADD CONSTRAINT "Stay_bedId_fkey" FOREIGN KEY ("bedId") REFERENCES "public"."Bed"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."PatientMessage" ADD CONSTRAINT "PatientMessage_stayId_fkey" FOREIGN KEY ("stayId") REFERENCES "public"."Stay"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."StayTag" ADD CONSTRAINT "StayTag_stayId_fkey" FOREIGN KEY ("stayId") REFERENCES "public"."Stay"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -418,16 +449,3 @@ ALTER TABLE "public"."PushTask" ADD CONSTRAINT "PushTask_planId_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "public"."ReadEvent" ADD CONSTRAINT "ReadEvent_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "public"."PushTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."ExamAssignment" ADD CONSTRAINT "ExamAssignment_questionnaireId_fkey" FOREIGN KEY ("questionnaireId") REFERENCES "public"."Questionnaire"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."ExamAssignment" ADD CONSTRAINT "ExamAssignment_nurseId_fkey" FOREIGN KEY ("nurseId") REFERENCES "public"."StaffNurse"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."SurveyResponse" ADD CONSTRAINT "SurveyResponse_assignmentId_fkey" FOREIGN KEY ("assignmentId") REFERENCES "public"."ExamAssignment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "public"."SurveyResponse" ADD CONSTRAINT "SurveyResponse_nurseId_fkey" FOREIGN KEY ("nurseId") REFERENCES "public"."StaffNurse"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
