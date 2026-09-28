@@ -210,9 +210,38 @@ export function QuestionEditor({
         </button>
       </div>
       <p className="text-xs text-slate-500">选项右侧为分值：正确答案填正分，错项填 0。填空按关键词判分。考生端看不到分值和参考答案。</p>
-      <button disabled={pending} className="w-full rounded-lg bg-[#0F3A5F] py-2 font-semibold text-white disabled:opacity-60">
-        {pending ? "保存中…" : initial ? "保存试卷" : "保存试卷"}
-      </button>
+      <div className="flex gap-2">
+        <button disabled={pending} className="flex-1 rounded-lg bg-[#0F3A5F] py-2 font-semibold text-white disabled:opacity-60">
+          {pending ? "保存中…" : "保存试卷"}
+        </button>
+        {initial?.id ? (
+          <button
+            type="button"
+            disabled={pending}
+            className="rounded-lg border border-red-200 px-4 py-2 text-red-700 disabled:opacity-60"
+            onClick={() =>
+              start(async () => {
+                if (!confirm("确认删除该试卷？已有发送/答卷记录时将无法删除。")) return;
+                setMsg("");
+                const res = await fetch("/api/surveys", {
+                  method: "DELETE",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ id: initial.id }),
+                });
+                const data = (await res.json().catch(() => ({}))) as { error?: string };
+                if (!res.ok) {
+                  setMsg(data.error || "删除失败");
+                  return;
+                }
+                setMsg("已删除");
+                router.refresh();
+              })
+            }
+          >
+            删除
+          </button>
+        ) : null}
+      </div>
       {msg ? <p className="text-[#1A7A72]">{msg}</p> : null}
     </form>
   );
