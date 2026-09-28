@@ -59,3 +59,31 @@ export async function POST(req: Request) {
   revalidateNurse();
   return NextResponse.json({ ok: true, id: created.id });
 }
+
+export async function DELETE(req: Request) {
+  const session = await requireApiSession();
+  if (!isSession(session)) return session;
+  const role = session.role;
+  if (role !== "head_nurse") return NextResponse.json({ error: "仅护士长可删除试卷" }, { status: 403 });
+  const body = (await req.json()) as { id?: string };
+  if (!body.id) return NextResponse.json({ error: "缺少 id" }, { status: 400 });
+  const existing = await prisma.questionnaire.findUnique({ where: { id: body.id } });
+  if (!existing) return NextResponse.json({ error: "试卷不存在" }, { status: 404 });
+
+  const [tasks, jobs, assignments, responses] = await Promise.all([
+    prisma.pushTask.count({ where: { questionnaireId: body.id } }),
+    prisma.pushJob.count({ where: { questionnaireId: body.id } }),
+    prisma.examAssignment.count({ where: { questionnaireId: body.id } }),
+    prisma.surveyResponse.count({ where: { questionnaireId: body.id } }),
+  ]);
+  if (tasks + jobs + assignments + responses > 0) {
+    return NextResponse.json(
+      { error: "该试卷已有发送或答卷记录，请勿直接删除；可新建试卷替代" },
+      { status: 409 },
+    );
+  }
+  await prisma.questionnaire.delete({ where: { id: body.id } });
+  await writeAudit(role, "删试卷", body.id, existing.title);
+  revalidateNurse();
+  return NextResponse.json({ ok: true });
+}
