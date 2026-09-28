@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ReadHeartbeat } from "@/components/ReadHeartbeat";
-import { stayByToken } from "@/lib/queries";
-import { READ_THRESHOLD_MS } from "@/lib/demo";
+import { stayByToken, getReadThresholdMs } from "@/lib/queries";
+import { noteImages } from "@/lib/note";
 import { prisma } from "@/lib/prisma";
 
 export default async function BrowseArticlePage({
@@ -30,23 +30,30 @@ export default async function BrowseArticlePage({
     );
   }
   const task = stay.tasks.find((t) => t.articleId === id && t.status !== "pending");
+  const images = noteImages(article.mediaType, article.mediaUrl);
+  const isAv = article.mediaType === "audio" || article.mediaType === "video";
+  const threshold = await getReadThresholdMs();
 
   return (
     <div className="mx-auto min-h-screen max-w-md bg-white">
       {task ? (
-        <ReadHeartbeat token={token} articleId={id} initialDwell={task.dwellMs} threshold={READ_THRESHOLD_MS} />
+        <ReadHeartbeat token={token} articleId={id} initialDwell={task.dwellMs} threshold={threshold} />
       ) : null}
+      {images.map((src) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={src.slice(0, 64)} src={src} alt="" className="w-full object-cover" />
+      ))}
       <article className="px-5 py-5">
         <Link href={`/p/${token}/center`} className="text-sm font-medium text-teal">
           返回宣教中心
         </Link>
         <h1 className="mt-3 font-serif text-2xl text-navy">{article.title}</h1>
         <div className="mt-4 whitespace-pre-wrap text-[17px] leading-8 text-slate-800">{article.body}</div>
-        {article.mediaUrl ? (
+        {isAv && article.mediaUrl ? (
           <p className="mt-4 text-sm">
             音视频：{" "}
             <a className="text-[#1A7A72] underline" href={article.mediaUrl}>
-              {article.mediaUrl}
+              打开媒体
             </a>
           </p>
         ) : null}
