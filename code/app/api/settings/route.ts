@@ -16,7 +16,10 @@ export async function POST(req: Request) {
     requireIntakeForm?: boolean;
     requirePushConfirm?: boolean;
     diseaseZoneName?: string;
+    effectiveReadSeconds?: number;
+    consultEnabled?: boolean;
   };
+  const seconds = Math.min(300, Math.max(1, Number(body.effectiveReadSeconds) || 8));
   await prisma.educationSettings.update({
     where: { id: "demo" },
     data: {
@@ -26,6 +29,8 @@ export async function POST(req: Request) {
       requireIntakeForm: Boolean(body.requireIntakeForm),
       requirePushConfirm: Boolean(body.requirePushConfirm),
       diseaseZoneName: body.diseaseZoneName || "脑梗死专区",
+      effectiveReadSeconds: seconds,
+      consultEnabled: Boolean(body.consultEnabled),
     },
   });
   await writeAudit(role, "改宣教设置", "demo");
