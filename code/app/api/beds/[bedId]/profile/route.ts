@@ -27,6 +27,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ bedId: string 
     allergy?: string;
     contactName?: string;
     contactPhone?: string;
+    attendingDoctor?: string;
+    bedDoctor?: string;
     surgeryAt?: string;
     primaryNurseId?: string;
   };
@@ -35,6 +37,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ bedId: string 
 
   const admittedAt = body.admittedAt ? new Date(`${body.admittedAt}T08:00:00`) : stay.admittedAt;
   const surgeryAt = body.surgeryAt ? new Date(`${body.surgeryAt}T08:00:00`) : null;
+  const diagnosis = body.diagnosis ?? stay.diagnosis;
 
   await prisma.bed.update({
     where: { id: bedId },
@@ -52,15 +55,36 @@ export async function POST(req: Request, ctx: { params: Promise<{ bedId: string 
       age: Number.isFinite(body.age) ? Number(body.age) : stay.age,
       hospitalNo: body.hospitalNo ?? stay.hospitalNo,
       admittedAt,
-      diagnosis: body.diagnosis ?? stay.diagnosis,
+      diagnosis,
       nursingLevel: body.nursingLevel ?? stay.nursingLevel,
       dietOrder: body.dietOrder ?? stay.dietOrder,
       allergy: body.allergy ?? stay.allergy,
       contactName: body.contactName ?? stay.contactName,
       contactPhone: body.contactPhone ?? stay.contactPhone,
+      attendingDoctor: body.attendingDoctor ?? (stay as { attendingDoctor?: string }).attendingDoctor ?? "",
+      bedDoctor: body.bedDoctor ?? (stay as { bedDoctor?: string }).bedDoctor ?? "",
       surgeryAt,
     },
   });
+
+  const autoTags: [string, string][] = [
+    ["脑梗死", "tag-stroke"],
+    ["动脉瘤", "tag-aneurysm"],
+    ["糖尿病", "tag-diabetes"],
+  ];
+  for (const [key, tagId] of autoTags) {
+    if (diagnosis.includes(key)) {
+      const exists = await prisma.tagGroup.findUnique({ where: { id: tagId } });
+      if (exists) {
+        await prisma.stayTag.upsert({
+          where: { stayId_tagGroupId: { stayId: stay.id, tagGroupId: tagId } },
+          create: { stayId: stay.id, tagGroupId: tagId },
+          update: {},
+        });
+      }
+    }
+  }
+
   await writeAudit(role, "改档案", bedId, body.patientName || bed.patientName);
   revalidateNurse();
   return NextResponse.json({ ok: true });
