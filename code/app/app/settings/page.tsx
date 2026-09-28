@@ -3,20 +3,23 @@ import { getRole } from "@/lib/session";
 import { getSettings } from "@/lib/queries";
 import { SettingsForm } from "@/components/SettingsForm";
 import { TagGroupCatalog } from "@/components/TagGroupCatalog";
+import { BedManager } from "@/components/BedManager";
 import { PageHeader } from "@/components/PageHeader";
 import { ROLE_LABEL, appUrl, canManageTagCatalog } from "@/lib/demo";
 import { formatDemoDate } from "@/lib/clock";
 
 export default async function SettingsPage() {
   const role = await getRole();
-  const [settings, org, invite, audits, groups] = await Promise.all([
+  const [settings, org, invite, audits, groups, beds] = await Promise.all([
     getSettings(),
     prisma.orgNode.findMany({ orderBy: { sortOrder: "asc" } }),
     prisma.inviteLink.findUnique({ where: { id: "demo-invite" } }),
     prisma.auditLog.findMany({ orderBy: { at: "desc" }, take: 30 }),
     prisma.tagGroup.findMany({ orderBy: { name: "asc" } }),
+    prisma.bed.findMany({ orderBy: { code: "asc" }, select: { code: true } }),
   ]);
   const inviteUrl = `${appUrl()}/app/login?invite=${invite?.token ?? ""}`;
+  const readSeconds = Number((settings as { effectiveReadSeconds?: number }).effectiveReadSeconds ?? 8);
 
   return (
     <div>
@@ -31,11 +34,16 @@ export default async function SettingsPage() {
             requireIntakeForm={settings.requireIntakeForm}
             requirePushConfirm={settings.requirePushConfirm}
             diseaseZoneName={settings.diseaseZoneName}
+            effectiveReadSeconds={readSeconds}
+            consultEnabled={settings.consultEnabled}
           />
         ) : (
           <p className="mt-3 text-sm text-slate-500">宣教设置仅护士长可改。咨询开关保持关闭。</p>
         )}
-        <TagGroupCatalog groups={groups} canEdit={canManageTagCatalog(role)} />
+        <div id="tag-groups" className="scroll-mt-24">
+          <TagGroupCatalog groups={groups} canEdit={canManageTagCatalog(role)} />
+        </div>
+        {role === "head_nurse" ? <BedManager bedCodes={beds.map((b) => b.code)} /> : null}
         <section className="mt-6 rounded-xl border bg-white p-5">
           <h2 className="font-bold text-[#0F3A5F]">组织树（只读）</h2>
           <ul className="mt-2 text-sm leading-7">
