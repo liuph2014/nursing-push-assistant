@@ -21,6 +21,6 @@ export async function POST(req: Request) {
   }
   const token = signSession({ id: account.id, role: account.role, name: account.name });
   const res = NextResponse.json({ ok: true, home: homeForRole(account.role) });
-  res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
+  res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(req));
   return res;
 }
