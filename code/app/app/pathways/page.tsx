@@ -13,7 +13,7 @@ export default async function PathwaysPage() {
 
   return (
     <div>
-      <PageHeader kicker="宣教" title="宣教路径" description="普通入院已启用。脑梗死路径默认待审核，护士长点启用后才能套到患者。" />
+      <PageHeader kicker="宣教" title="宣教路径" description="普通入院已启用。脑梗死路径默认待审核，护士长点启用后才能套到患者。路径步骤可视化编辑将在后续版本提供；当前可审核启用或撤回待审。" />
       <ul className="mt-4 space-y-4">
         {pathways.map((p) => (
           <li key={p.id} className="rounded-xl border bg-white p-4">
