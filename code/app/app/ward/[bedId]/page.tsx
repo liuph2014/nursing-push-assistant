@@ -140,7 +140,19 @@ export default async function BedPage({ params }: { params: Promise<{ bedId: str
           <p className="mt-1 break-all text-xs text-slate-500">{wardUrl}</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={wardQr} alt="病区入组码" className="mx-auto mt-3 h-56 w-56" />
-          <p className="mt-3 text-sm text-slate-600">需 HTTPS 公网地址微信才能扫开。本地可用浏览器打开同一链接。</p>
+          <p className="mt-3 text-sm text-slate-600">
+            {wardUrl.startsWith("https://")
+              ? "微信扫码需公网 HTTPS（443 已放行且已配置证书）。若打不开，请用浏览器打开上方链接，或联系运维开通 HTTPS。"
+              : "当前为 HTTP 地址，可用手机浏览器打开；微信内若拦截，请点右上角用浏览器打开，或开通 HTTPS 后重建二维码。"}
+          </p>
+          <a
+            href={wardUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white"
+          >
+            在浏览器打开入组页
+          </a>
         </div>
         <details className="surface rounded-2xl p-5">
           <summary className="cursor-pointer text-sm font-semibold text-slate-600">本床调试链接（兼容旧床头码）</summary>
@@ -148,6 +160,14 @@ export default async function BedPage({ params }: { params: Promise<{ bedId: str
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={stayQr} alt="本床调试码" className="mx-auto mt-3 h-40 w-40 opacity-80" />
           <p className="mt-3 break-all font-mono text-sm text-navy">{stayUrl}</p>
+          <a
+            href={stayUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-navy ring-1 ring-[var(--line)]"
+          >
+            在浏览器打开本床患者页
+          </a>
         </details>
       </section>
     </div>
