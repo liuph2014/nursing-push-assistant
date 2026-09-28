@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ReadHeartbeat } from "@/components/ReadHeartbeat";
-import { stayByToken } from "@/lib/queries";
-import { READ_THRESHOLD_MS } from "@/lib/demo";
+import { stayByToken, getReadThresholdMs } from "@/lib/queries";
 import { noteImages } from "@/lib/note";
 
 export default async function ArticlePage({
@@ -33,15 +32,11 @@ export default async function ArticlePage({
   }
   const images = noteImages(task.article.mediaType, task.article.mediaUrl);
   const isAv = task.article.mediaType === "audio" || task.article.mediaType === "video";
+  const threshold = await getReadThresholdMs();
 
   return (
     <div className="mx-auto min-h-screen max-w-md bg-white">
-      <ReadHeartbeat
-        token={token}
-        articleId={id}
-        initialDwell={task.dwellMs}
-        threshold={READ_THRESHOLD_MS}
-      />
+      <ReadHeartbeat token={token} articleId={id} initialDwell={task.dwellMs} threshold={threshold} />
       {images.map((src) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img key={src} src={src} alt="" className="w-full object-cover" />
@@ -56,7 +51,7 @@ export default async function ArticlePage({
           <p className="mt-4 text-sm">
             音视频：{" "}
             <a className="text-[#1A7A72] underline" href={task.article.mediaUrl}>
-              {task.article.mediaUrl}
+              打开媒体
             </a>
           </p>
         ) : null}
