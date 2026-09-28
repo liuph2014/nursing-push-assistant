@@ -4,7 +4,7 @@ export type Role = (typeof ROLES)[number];
 export const ROLE_LABEL: Record<Role, string> = {
   head_nurse: "护士长",
   primary_nurse: "责任护士",
-  nursing_admin: "护理部",
+  nursing_admin: "科护士长",
   qa_readonly: "只读质控",
   sys_admin: "系统管理员",
 };
@@ -67,6 +67,10 @@ export function patientUrl(token: string) {
   return `${appUrl()}/p/${token}`;
 }
 
+export function wardJoinUrl(wardToken = "demo-ward") {
+  return `${appUrl()}/p/w/${wardToken}`;
+}
+
 export function maskName(name: string, role: Role) {
   if (role !== "nursing_admin" && role !== "qa_readonly") return name;
   if (!name) return name;
@@ -82,7 +86,7 @@ export const ACCOUNTS = [
   { id: "wang", name: "王护士", role: "primary_nurse", bedsLabel: "3–4 床" },
   { id: "zhao", name: "赵护士", role: "primary_nurse", bedsLabel: "5–6 床" },
   { id: "qian", name: "钱护士", role: "primary_nurse", bedsLabel: "7–8 床" },
-  { id: "nursing", name: "护理部", role: "nursing_admin", bedsLabel: "" },
+  { id: "nursing", name: "科护士长", role: "nursing_admin", bedsLabel: "" },
   { id: "qa", name: "质控", role: "qa_readonly", bedsLabel: "" },
 ] as const;
 
@@ -105,7 +109,8 @@ export const NAV_GROUPS: {
     id: "work",
     label: "作业台",
     items: [
-      { href: "/app/ward", label: "床位图", hint: "检索、归类、进床", roles: ["head_nurse", "primary_nurse"] },
+      { href: "/app/ward", label: "床位图", hint: "检索、档案归类、进床", roles: ["head_nurse", "primary_nurse"] },
+      { href: "/app/ward?panel=1", label: "档案归类", hint: "按诊断/等级筛选", roles: ["head_nurse", "primary_nurse"] },
       { href: "/app/tasks", label: "今日任务", hint: "未读与当面补讲", roles: ["head_nurse", "primary_nurse", "nursing_admin"] },
     ],
   },
@@ -131,7 +136,8 @@ export const NAV_GROUPS: {
     id: "sys",
     label: "系统",
     items: [
-      { href: "/app/settings", label: "设置", hint: "病区、标记组、质控", roles: ["head_nurse", "primary_nurse", "nursing_admin", "qa_readonly"] },
+      { href: "/app/settings", label: "设置", hint: "病区、标记组目录、质控", roles: ["head_nurse", "primary_nurse", "nursing_admin", "qa_readonly"] },
+      { href: "/app/settings#tag-groups", label: "标记组管理", hint: "维护目录颜色", roles: ["head_nurse"] },
       { href: "/app/accounts", label: "账号权限", hint: "工号、角色与密码", roles: ["sys_admin"] },
     ],
   },
