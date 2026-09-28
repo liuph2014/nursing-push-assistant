@@ -4,17 +4,29 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { noteImages } from "@/lib/note";
 
+export type PushStayOption = {
+  stayId: string;
+  bedCode: number;
+  patientName: string;
+  diagnosis: string;
+  primaryNurseId: string;
+};
+
 export function PushForm({
   articles,
   questionnaires,
   tags,
+  stays,
   canWard,
+  actorId,
   initialArticleId,
 }: {
   articles: { id: string; title: string; summary: string; category: string; keywords: string; mediaType: string; mediaUrl: string }[];
   questionnaires: { id: string; title: string }[];
   tags: { id: string; name: string }[];
+  stays: PushStayOption[];
   canWard: boolean;
+  actorId: string;
   initialArticleId?: string;
 }) {
   const router = useRouter();
@@ -27,6 +39,8 @@ export function PushForm({
   const [contentType, setContentType] = useState<"article" | "questionnaire" | "notice">("article");
   const [questionnaireId, setQuestionnaireId] = useState(questionnaires[0]?.id ?? "");
   const [noticeBody, setNoticeBody] = useState("");
+  const [selectedStayIds, setSelectedStayIds] = useState<string[]>([]);
+  const [pickMode, setPickMode] = useState<"filter" | "patients">("patients");
   const [msg, setMsg] = useState("");
 
   const filtered = useMemo(() => {
@@ -35,6 +49,17 @@ export function PushForm({
     return articles.filter((a) => `${a.title} ${a.summary} ${a.category} ${a.keywords}`.toLowerCase().includes(s));
   }, [articles, q]);
 
+  const candidateStays = useMemo(() => {
+    return stays.filter((s) => {
+      if (scope === "primary" && s.primaryNurseId !== actorId) return false;
+      return true;
+    });
+  }, [stays, scope, actorId]);
+
+  function toggleStay(id: string) {
+    setSelectedStayIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
   return (
     <form
       className="space-y-4 rounded-xl border bg-white p-4 text-sm"
@@ -42,12 +67,18 @@ export function PushForm({
         e.preventDefault();
         start(async () => {
           setMsg("");
-          const payload =
+          if (pickMode === "patients" && selectedStayIds.length === 0) {
+            setMsg("请至少勾选一名患者");
+            return;
+          }
+          const base =
             contentType === "article"
               ? { contentType, articleId, tagGroupId, scope, schedule }
               : contentType === "questionnaire"
                 ? { contentType, questionnaireId, tagGroupId, scope, schedule }
                 : { contentType, noticeBody, tagGroupId, scope, schedule };
+          const payload =
+            pickMode === "patients" ? { ...base, stayIds: selectedStayIds } : { ...base, stayIds: [] as string[] };
           const res = await fetch("/api/push", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -103,17 +134,22 @@ export function PushForm({
       </div>
       <div>
         <p className="font-semibold text-[#0F3A5F]">2. 筛人并发送</p>
-        <label className="mt-2 block">
-          标记组
-          <select className="mt-1 w-full rounded border px-2 py-1" value={tagGroupId} onChange={(e) => setTagGroupId(e.target.value)}>
-            <option value="">不限（当前范围全部床）</option>
-            {tags.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            className={`rounded-full px-3 py-1 text-xs ${pickMode === "patients" ? "bg-navy text-white" : "bg-slate-100 text-slate-600"}`}
+            onClick={() => setPickMode("patients")}
+          >
+            勾选患者
+          </button>
+          <button
+            type="button"
+            className={`rounded-full px-3 py-1 text-xs ${pickMode === "filter" ? "bg-navy text-white" : "bg-slate-100 text-slate-600"}`}
+            onClick={() => setPickMode("filter")}
+          >
+            按标记组
+          </button>
+        </div>
         <label className="mt-2 block">
           范围
           <select
@@ -125,6 +161,46 @@ export function PushForm({
             {canWard ? <option value="ward">全科</option> : null}
           </select>
         </label>
+        {pickMode === "patients" ? (
+          <div className="mt-2 max-h-48 space-y-1 overflow-auto rounded border bg-slate-50 p-2">
+            <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+              <span>已选 {selectedStayIds.length} 人</span>
+              <button
+                type="button"
+                className="text-[#1A7A72]"
+                onClick={() =>
+                  setSelectedStayIds(
+                    selectedStayIds.length === candidateStays.length ? [] : candidateStays.map((s) => s.stayId),
+                  )
+                }
+              >
+                {selectedStayIds.length === candidateStays.length ? "取消全选" : "全选当前范围"}
+              </button>
+            </div>
+            {candidateStays.length === 0 ? <p className="text-xs text-slate-500">当前范围无在院患者</p> : null}
+            {candidateStays.map((s) => (
+              <label key={s.stayId} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-white">
+                <input type="checkbox" checked={selectedStayIds.includes(s.stayId)} onChange={() => toggleStay(s.stayId)} />
+                <span>
+                  {s.bedCode} 床 · {s.patientName || "未填姓名"}
+                  {s.diagnosis ? ` · ${s.diagnosis}` : ""}
+                </span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <label className="mt-2 block">
+            标记组
+            <select className="mt-1 w-full rounded border px-2 py-1" value={tagGroupId} onChange={(e) => setTagGroupId(e.target.value)}>
+              <option value="">不限（当前范围全部床）</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="mt-2 block">
           时机
           <select className="mt-1 w-full rounded border px-2 py-1" value={schedule} onChange={(e) => setSchedule(e.target.value as "now" | "tomorrow")}>
