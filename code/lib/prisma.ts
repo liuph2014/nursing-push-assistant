@@ -9,11 +9,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function useRemotePostgres() {
+  // 显式要求内嵌库时才用 PGlite；否则只要有 Postgres URL（含 localhost）就走 Postgres
+  if (process.env.USE_PGLITE === "1") return false;
   if (process.env.VERCEL) return true;
   if (process.env.USE_PGLITE === "0") return true;
   const url = process.env.DATABASE_URL ?? "";
   if (!url) return false;
-  if (url.includes("localhost") || url.includes("127.0.0.1")) return false;
   return url.startsWith("postgres");
 }
 
@@ -25,6 +26,8 @@ async function migrateStayColumns(pglite: { query: (sql: string) => Promise<{ ro
     ["nursingLevel", "TEXT NOT NULL DEFAULT ''"],
     ["dietOrder", "TEXT NOT NULL DEFAULT ''"],
     ["allergy", "TEXT NOT NULL DEFAULT ''"],
+    ["attendingDoctor", "TEXT NOT NULL DEFAULT ''"],
+    ["bedDoctor", "TEXT NOT NULL DEFAULT ''"],
   ];
   for (const [name, def] of stayCols) {
     const r = await pglite.query(
@@ -36,6 +39,38 @@ async function migrateStayColumns(pglite: { query: (sql: string) => Promise<{ ro
   }
   await migrateExamSchema(pglite);
   await migrateAuthSchema(pglite);
+  await migrateSettingsColumns(pglite);
+}
+
+async function migrateSettingsColumns(pglite: { query: (sql: string) => Promise<{ rows: unknown[] }>; exec: (sql: string) => Promise<unknown> }) {
+  const cols: [string, string][] = [
+    ["effectiveReadSeconds", "INTEGER NOT NULL DEFAULT 8"],
+    ["wardJoinToken", "TEXT NOT NULL DEFAULT 'demo-ward'"],
+  ];
+  for (const [name, def] of cols) {
+    const r = await pglite.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'EducationSettings' AND column_name = '${name}'`,
+    );
+    if (!r.rows.length) {
+      await pglite.exec(`ALTER TABLE "EducationSettings" ADD COLUMN "${name}" ${def}`);
+    }
+  }
+  await pglite.exec(`
+    CREATE TABLE IF NOT EXISTS "PatientMessage" (
+      "id" TEXT NOT NULL,
+      "stayId" TEXT NOT NULL,
+      "body" TEXT NOT NULL,
+      "fromPatient" BOOLEAN NOT NULL DEFAULT true,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "PatientMessage_pkey" PRIMARY KEY ("id")
+    );
+  `);
+  const jobCol = await pglite.query(
+    `SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'PushJob' AND column_name = 'createdById'`,
+  );
+  if (!jobCol.rows.length) {
+    await pglite.exec(`ALTER TABLE "PushJob" ADD COLUMN "createdById" TEXT NOT NULL DEFAULT ''`);
+  }
 }
 
 async function migrateAuthSchema(pglite: { query: (sql: string) => Promise<{ rows: unknown[] }>; exec: (sql: string) => Promise<unknown> }) {
@@ -176,6 +211,7 @@ async function createClient(): Promise<PrismaClient> {
     await pglite.exec("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;");
     const sqlPath = path.join(process.cwd(), "prisma", "schema.sql");
     await pglite.exec(fs.readFileSync(sqlPath, "utf8"));
+    await migrateStayColumns(pglite);
   } else {
     await migrateStayColumns(pglite);
   }
