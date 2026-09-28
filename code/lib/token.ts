@@ -44,12 +44,14 @@ export function readSessionToken(token: string | undefined | null): SessionPaylo
   }
 }
 
-export function sessionCookieOptions() {
+export function sessionCookieOptions(request?: Request) {
+  const forwarded = request?.headers.get("x-forwarded-proto")?.split(",")[0].trim();
+  const proto = forwarded || (request ? new URL(request.url).protocol.replace(":", "") : "");
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     path: "/",
-    secure: (process.env.NEXT_PUBLIC_APP_URL ?? "").startsWith("https://"),
+    secure: proto === "https",
     maxAge: MAX_AGE_MS / 1000,
   };
 }
