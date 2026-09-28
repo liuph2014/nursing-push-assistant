@@ -40,10 +40,10 @@ export default async function WardPage() {
         title="床位图"
         description={
           role === "primary_nurse"
-            ? "仅可操作责任床。用检索找人，用档案归类按手术日、住院时间、护理等级查看。"
+            ? "仅可操作责任床。顶部可切换「在院 / 已出院」。用检索找人，用档案归类按手术日、住院时间、护理等级查看。"
             : role === "nursing_admin" || role === "qa_readonly"
               ? "只读查看，成果请到成效看板。"
-              : "检索找人；档案归类按诊断、护理等级、手术日、住院时间整理交班。"
+              : "顶部切换「在院 / 已出院」管理；检索找人；档案归类按诊断、护理等级、手术日、住院时间整理交班。"
         }
         actions={
           <Link href="/app/tasks" className="ui-btn ui-btn-navy">
