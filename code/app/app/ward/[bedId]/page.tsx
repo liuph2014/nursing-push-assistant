@@ -6,8 +6,8 @@ import { TagGroupEditor } from "@/components/TagGroupEditor";
 import { BedProfileForm } from "@/components/BedProfileForm";
 import { StayActions } from "@/components/StayActions";
 import { PageHeader } from "@/components/PageHeader";
-import { STAFF_NURSES, canManageBed, maskName, patientUrl } from "@/lib/demo";
-import { getBedByCode, listTagGroups } from "@/lib/queries";
+import { STAFF_NURSES, canManageBed, maskName, patientUrl, wardJoinUrl } from "@/lib/demo";
+import { getBedByCode, getSettings, listTagGroups } from "@/lib/queries";
 import { getActorId, getRole } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatDemoDate } from "@/lib/clock";
@@ -33,18 +33,23 @@ export default async function BedPage({ params }: { params: Promise<{ bedId: str
   const actorId = await getActorId();
   const manage = canManageBed(role, bed.primaryNurseId, actorId);
   const nurseOptions = STAFF_NURSES.map((n) => ({ id: n.id, label: `${n.name} · ${n.bedsLabel}` }));
-  const url = patientUrl(bed.stay.accessToken);
-  const [qr, groups, pathways, emptyBeds] = await Promise.all([
-    QRCode.toDataURL(url, { width: 280, margin: 1 }),
+  const settings = await getSettings();
+  const wardToken = (settings as { wardJoinToken?: string }).wardJoinToken || "demo-ward";
+  const wardUrl = wardJoinUrl(wardToken);
+  const stayUrl = patientUrl(bed.stay.accessToken);
+  const [wardQr, stayQr, groups, pathways, emptyBeds] = await Promise.all([
+    QRCode.toDataURL(wardUrl, { width: 280, margin: 1 }),
+    QRCode.toDataURL(stayUrl, { width: 200, margin: 1 }),
     listTagGroups(),
     prisma.pathway.findMany({ orderBy: { name: "asc" } }),
     prisma.bed.findMany({
-      where: { code: { lte: 8 }, stay: { status: "discharged" } },
+      where: { stay: { status: "discharged" } },
       select: { code: true },
     }),
   ]);
   const tasks = bed.stay.tasks;
   const surgery = bed.stay.surgeryAt ? formatDemoDate(bed.stay.surgeryAt) : "";
+  const stayExtra = bed.stay as { attendingDoctor?: string; bedDoctor?: string };
 
   return (
     <div>
@@ -104,6 +109,8 @@ export default async function BedPage({ params }: { params: Promise<{ bedId: str
             allergy={bed.stay.allergy}
             contactName={bed.stay.contactName}
             contactPhone={bed.stay.contactPhone}
+            attendingDoctor={stayExtra.attendingDoctor || ""}
+            bedDoctor={stayExtra.bedDoctor || ""}
             surgeryAt={surgery}
             primaryNurseId={bed.primaryNurseId ?? ""}
             nurseOptions={nurseOptions}
@@ -128,17 +135,20 @@ export default async function BedPage({ params }: { params: Promise<{ bedId: str
       </section>
       <section id="bed-qr" className="scroll-mt-28 space-y-5">
         <div className="surface rounded-2xl p-5 text-center">
-          <h2 className="text-lg font-semibold text-navy">床头码 · 请用微信扫</h2>
-          <p className="mt-1 break-all text-xs text-slate-500">{url}</p>
+          <h2 className="text-lg font-semibold text-navy">病区统一码 · 请用微信扫</h2>
+          <p className="mt-1 text-xs text-slate-500">每个病区一个码；患者扫码填档或跳过，由护士后台补全。</p>
+          <p className="mt-1 break-all text-xs text-slate-500">{wardUrl}</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qr} alt="床头宣教码" className="mx-auto mt-3 h-56 w-56" />
-          <p className="mt-3 text-sm text-slate-600">需使用 HTTPS 公网地址，微信才能扫开。本地可用浏览器打开同一链接做联调。</p>
+          <img src={wardQr} alt="病区入组码" className="mx-auto mt-3 h-56 w-56" />
+          <p className="mt-3 text-sm text-slate-600">需 HTTPS 公网地址微信才能扫开。本地可用浏览器打开同一链接。</p>
         </div>
-        <div className="surface rounded-2xl p-8 text-center">
-          <h2 className="text-lg font-semibold text-navy">屏用大字码</h2>
-          <p className="mt-2 text-sm text-slate-500">与床头码同一条链接，可在床旁屏浏览器全屏打开。</p>
-          <p className="mt-6 break-all font-mono text-xl leading-8 text-navy">{url}</p>
-        </div>
+        <details className="surface rounded-2xl p-5">
+          <summary className="cursor-pointer text-sm font-semibold text-slate-600">本床调试链接（兼容旧床头码）</summary>
+          <p className="mt-2 break-all text-xs text-slate-500">{stayUrl}</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={stayQr} alt="本床调试码" className="mx-auto mt-3 h-40 w-40 opacity-80" />
+          <p className="mt-3 break-all font-mono text-sm text-navy">{stayUrl}</p>
+        </details>
       </section>
     </div>
     </div>
