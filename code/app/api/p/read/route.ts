@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { READ_THRESHOLD_MS } from "@/lib/demo";
+import { getReadThresholdMs } from "@/lib/queries";
 
 const MAX_STEP_MS = 5000;
 
@@ -24,11 +24,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, status: task.status, dwellMs: task.dwellMs });
   }
 
+  const threshold = await getReadThresholdMs();
   const now = new Date();
   const gap = task.lastHeartbeatAt ? now.getTime() - task.lastHeartbeatAt.getTime() : 0;
   const addMs = task.lastHeartbeatAt ? Math.min(Math.max(gap, 0), MAX_STEP_MS) : 0;
   const dwellMs = task.dwellMs + addMs;
-  const reached = dwellMs >= READ_THRESHOLD_MS;
+  const reached = dwellMs >= threshold;
   const updated = await prisma.pushTask.update({
     where: { id: task.id },
     data: {
@@ -50,6 +51,6 @@ export async function POST(req: Request) {
     ok: true,
     status: updated.status,
     dwellMs: updated.dwellMs,
-    threshold: READ_THRESHOLD_MS,
+    threshold,
   });
 }
