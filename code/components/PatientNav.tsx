@@ -8,6 +8,7 @@ export async function PatientNav({ token }: { token: string }) {
     { href: `/p/${token}/inbox?tab=done`, label: "已完成" },
     { href: `/p/${token}/center`, label: "宣教中心" },
     { href: `/p/${token}/zone`, label: settings.diseaseZoneName },
+    { href: `/p/${token}/consult`, label: "留言" },
   ];
   return (
     <nav className="mb-4 flex flex-wrap gap-2 text-sm">
