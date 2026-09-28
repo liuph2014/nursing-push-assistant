@@ -10,6 +10,8 @@ export function SettingsForm({
   requireIntakeForm,
   requirePushConfirm,
   diseaseZoneName,
+  effectiveReadSeconds,
+  consultEnabled,
 }: {
   autoDischargeDays: number;
   hotline: string;
@@ -17,6 +19,8 @@ export function SettingsForm({
   requireIntakeForm: boolean;
   requirePushConfirm: boolean;
   diseaseZoneName: string;
+  effectiveReadSeconds: number;
+  consultEnabled: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -27,6 +31,8 @@ export function SettingsForm({
     requireIntakeForm,
     requirePushConfirm,
     diseaseZoneName,
+    effectiveReadSeconds,
+    consultEnabled,
   });
 
   return (
@@ -54,6 +60,18 @@ export function SettingsForm({
         />
       </label>
       <label className="block">
+        有效阅读秒数
+        <input
+          type="number"
+          min={1}
+          max={300}
+          className="mt-1 w-full rounded border px-2 py-1"
+          value={form.effectiveReadSeconds}
+          onChange={(e) => setForm({ ...form, effectiveReadSeconds: Number(e.target.value) || 8 })}
+        />
+        <span className="mt-1 block text-xs text-slate-500">患者打开文章累计停留达到该秒数记为有效阅读（当前 {form.effectiveReadSeconds} 秒）</span>
+      </label>
+      <label className="block">
         热线名称
         <input className="mt-1 w-full rounded border px-2 py-1" value={form.hotlineLabel} onChange={(e) => setForm({ ...form, hotlineLabel: e.target.value })} />
       </label>
@@ -62,7 +80,7 @@ export function SettingsForm({
         <input className="mt-1 w-full rounded border px-2 py-1" value={form.hotline} onChange={(e) => setForm({ ...form, hotline: e.target.value })} />
       </label>
       <label className="block">
-        专病专区名称
+        默认专病专区名称
         <input className="mt-1 w-full rounded border px-2 py-1" value={form.diseaseZoneName} onChange={(e) => setForm({ ...form, diseaseZoneName: e.target.value })} />
       </label>
       <label className="flex items-center gap-2">
@@ -73,7 +91,10 @@ export function SettingsForm({
         <input type="checkbox" checked={form.requirePushConfirm} onChange={(e) => setForm({ ...form, requirePushConfirm: e.target.checked })} />
         全科群发须护士长确认
       </label>
-      <p className="rounded bg-slate-100 p-2 text-slate-500">患者咨询开关：关闭（占位，咨询模块不做）</p>
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={form.consultEnabled} onChange={(e) => setForm({ ...form, consultEnabled: e.target.checked })} />
+        开放患者在线问诊/留言（出院后仍可留言）
+      </label>
       <button disabled={pending} className="rounded bg-[#0F3A5F] px-4 py-2 font-semibold text-white">
         {pending ? "保存中…" : "保存设置"}
       </button>
