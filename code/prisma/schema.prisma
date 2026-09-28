@@ -56,6 +56,8 @@ model EducationSettings {
   consentText        String  @default("")
   diseaseZoneName    String  @default("脑梗死专区")
   diseaseZoneTagId   String  @default("tag-stroke")
+  effectiveReadSeconds Int   @default(8)
+  wardJoinToken      String  @default("demo-ward")
 }
 
 model InviteLink {
@@ -249,10 +251,22 @@ model Stay {
   allergy            String            @default("")
   contactName        String            @default("")
   contactPhone       String            @default("")
+  attendingDoctor    String            @default("")
+  bedDoctor          String            @default("")
   tasks              PushTask[]
   tags               StayTag[]
   responses          SurveyResponse[]
   pathways           StayPathway[]
+  messages           PatientMessage[]
+}
+
+model PatientMessage {
+  id          String   @id @default(cuid())
+  stayId      String
+  stay        Stay     @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  body        String
+  fromPatient Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }
 
 model StayTag {
@@ -276,6 +290,7 @@ model PushJob {
   scheduleAt       DateTime?
   status           String          @default("sent")
   createdBy        String
+  createdById      String          @default("")
   createdAt        DateTime        @default(now())
   statsSent        Int             @default(0)
   statsRead        Int             @default(0)
