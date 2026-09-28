@@ -7,14 +7,18 @@ type Filter = {
   scope?: "primary" | "ward";
   inWard?: boolean;
   nurseId?: string;
+  /** 勾选具体患者时优先按 stayId 圈人；为空则按标记组+范围 */
+  stayIds?: string[];
 };
 
 export async function matchingStays(filter: Filter) {
   const stays = await prisma.stay.findMany({
     include: { bed: true, tags: true, tasks: true },
   });
+  const stayIdSet = filter.stayIds?.length ? new Set(filter.stayIds) : null;
   return stays.filter((s) => {
     if (filter.inWard !== false && s.status !== "in_ward") return false;
+    if (stayIdSet) return stayIdSet.has(s.id);
     if (filter.scope === "primary" && s.bed.primaryNurseId !== filter.nurseId) return false;
     if (filter.tagGroupId && !s.tags.some((t) => t.tagGroupId === filter.tagGroupId)) return false;
     return true;
