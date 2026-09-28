@@ -19,6 +19,21 @@ services:
     networks:
       - internal
 
+  migrate:
+    build:
+      context: ../code
+      dockerfile: ../deploy/Dockerfile.migrate
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: "no"
+
   web:
     build:
       context: ../code
@@ -38,6 +53,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     expose:
       - "3000"
     networks:
