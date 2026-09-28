@@ -21,6 +21,7 @@ export async function POST(req: Request) {
     tagGroupId?: string;
     scope?: "primary" | "ward";
     schedule?: "now" | "tomorrow";
+    stayIds?: string[];
   };
   const settings = await getSettings();
   const scope = body.scope === "ward" ? "ward" : "primary";
@@ -29,12 +30,35 @@ export async function POST(req: Request) {
   }
   const contentType = body.contentType || "article";
   const now = await getDemoNow();
-  const filter: { tagGroupId: string; scope: "primary" | "ward"; inWard: boolean; nurseId: string } = {
+  const stayIds = Array.isArray(body.stayIds) ? body.stayIds.filter((id) => typeof id === "string" && id) : [];
+  const filter: {
+    tagGroupId: string;
+    scope: "primary" | "ward";
+    inWard: boolean;
+    nurseId: string;
+    stayIds: string[];
+  } = {
     tagGroupId: body.tagGroupId || "",
     scope,
     inWard: true,
     nurseId: session.id,
+    stayIds,
   };
+
+  if (stayIds.length) {
+    const allowed = await matchingStays({
+      scope,
+      inWard: true,
+      nurseId: session.id,
+      stayIds: undefined,
+    });
+    const allowedSet = new Set(allowed.map((s) => s.id));
+    const invalid = stayIds.filter((id) => !allowedSet.has(id));
+    if (invalid.length) {
+      return NextResponse.json({ error: "所选患者超出可推送范围" }, { status: 403 });
+    }
+  }
+
   const scheduleAt = body.schedule === "tomorrow" ? addDays(now, 1) : null;
   const needsConfirm = scope === "ward" && settings.requirePushConfirm && role === "primary_nurse";
   let status = "sent";
@@ -51,6 +75,7 @@ export async function POST(req: Request) {
       scheduleAt,
       status,
       createdBy: role,
+      createdById: session.id,
     },
   });
 
