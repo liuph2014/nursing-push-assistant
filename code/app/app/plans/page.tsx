@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getRole } from "@/lib/session";
 import { PageHeader } from "@/components/PageHeader";
 import { PostButton } from "@/components/PostButton";
+import { PlanCreateForm } from "@/components/PlanCreateForm";
 
 const ANCHOR: Record<string, string> = {
   first_scan: "首次扫码",
@@ -12,20 +13,33 @@ const ANCHOR: Record<string, string> = {
 
 export default async function PlansPage() {
   const role = await getRole();
-  const plans = await prisma.pushPlan.findMany({ include: { tagGroup: true, article: true } });
-  const missingSurgery = await prisma.stay.count({
-    where: { status: "in_ward", surgeryAt: null, tags: { some: { tagGroupId: "tag-surgery" } } },
-  });
+  const [plans, tags, articles, missingSurgery] = await Promise.all([
+    prisma.pushPlan.findMany({ include: { tagGroup: true, article: true } }),
+    prisma.tagGroup.findMany({ orderBy: { name: "asc" } }),
+    prisma.article.findMany({
+      where: { status: "published", scope: { notIn: ["public_lib", "hospital"] } },
+      orderBy: { sortOrder: "desc" },
+    }),
+    prisma.stay.count({
+      where: { status: "in_ward", surgeryAt: null, tags: { some: { tagGroupId: "tag-surgery" } } },
+    }),
+  ]);
 
   return (
     <div>
       <PageHeader
         kicker="宣教"
         title="智能计划"
-        description="一次设定，按标记组圈人。到期后打开护士站会自动生成任务。缺手术日的计划会跳过。"
+        description="一次设定，按标记组圈人。到期后打开护士站会自动生成任务。缺手术日的计划会跳过。护士长可新建计划并启用。"
       />
       {missingSurgery > 0 ? (
         <p className="mt-3 rounded bg-amber-50 p-3 text-sm text-amber-900">有 {missingSurgery} 人打了手术标记但未填手术日，手术锚点计划不会发给他们。</p>
+      ) : null}
+      {role === "head_nurse" ? (
+        <PlanCreateForm
+          tags={tags.map((t) => ({ id: t.id, name: t.name }))}
+          articles={articles.map((a) => ({ id: a.id, title: a.title }))}
+        />
       ) : null}
       <ul className="mt-4 space-y-3">
         {plans.map((p) => (
