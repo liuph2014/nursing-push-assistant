@@ -2,8 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-
-const LEVELS = ["特级", "一级", "二级", "三级"];
+import {
+  ALLERGY_OPTIONS,
+  DIAGNOSIS_OPTIONS,
+  DIET_OPTIONS,
+  GENDER_OPTIONS,
+  NURSING_LEVEL_OPTIONS,
+} from "@/lib/profile-options";
 
 export function BedProfileForm({
   bedId,
@@ -18,6 +23,8 @@ export function BedProfileForm({
   allergy,
   contactName,
   contactPhone,
+  attendingDoctor,
+  bedDoctor,
   surgeryAt,
   primaryNurseId,
   nurseOptions,
@@ -36,6 +43,8 @@ export function BedProfileForm({
   allergy: string;
   contactName: string;
   contactPhone: string;
+  attendingDoctor: string;
+  bedDoctor: string;
   surgeryAt: string;
   primaryNurseId: string;
   nurseOptions: { id: string; label: string }[];
@@ -45,6 +54,9 @@ export function BedProfileForm({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState("");
+  const diagnosisOptions = Array.from(new Set([...DIAGNOSIS_OPTIONS, diagnosis].filter(Boolean)));
+  const dietOptions = Array.from(new Set([...DIET_OPTIONS, dietOrder].filter(Boolean)));
+  const allergyOptions = Array.from(new Set([...ALLERGY_OPTIONS, allergy || "无"].filter(Boolean)));
   const [form, setForm] = useState({
     patientName,
     gender: gender || "男",
@@ -53,10 +65,12 @@ export function BedProfileForm({
     admittedAt,
     diagnosis,
     nursingLevel: nursingLevel || "一级",
-    dietOrder,
-    allergy,
+    dietOrder: dietOrder || "普食",
+    allergy: allergy || "无",
     contactName,
     contactPhone,
+    attendingDoctor: attendingDoctor || "",
+    bedDoctor: bedDoctor || "",
     surgeryAt,
     primaryNurseId: primaryNurseId || nurseOptions[0]?.id || "",
   });
@@ -94,6 +108,13 @@ export function BedProfileForm({
         <dd>
           {contactName || "—"} {contactPhone}
         </dd>
+        <dt className="text-slate-500">主诊 / 管床医生</dt>
+        <dd>
+          {attendingDoctor || "—"} / {bedDoctor || "—"}
+        </dd>
+        <p className="col-span-2 mt-1 text-xs text-amber-700">
+          非责任床或当前角色只读，无法编辑档案。请切换到责任护士账号进入分管床。
+        </p>
       </dl>
     );
   }
@@ -110,6 +131,7 @@ export function BedProfileForm({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               ...form,
+              allergy: form.allergy === "无" ? "" : form.allergy,
               age: Number(form.age) || 0,
             }),
           });
@@ -130,8 +152,11 @@ export function BedProfileForm({
       <label className="block">
         性别
         <select className="mt-1 w-full rounded border px-2 py-1" value={form.gender} onChange={(e) => set("gender", e.target.value)}>
-          <option value="男">男</option>
-          <option value="女">女</option>
+          {GENDER_OPTIONS.map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
         </select>
       </label>
       <label className="block">
@@ -155,12 +180,19 @@ export function BedProfileForm({
       </label>
       <label className="block">
         诊断
-        <input className="mt-1 w-full rounded border px-2 py-1" value={form.diagnosis} onChange={(e) => set("diagnosis", e.target.value)} />
+        <select className="mt-1 w-full rounded border px-2 py-1" value={form.diagnosis} onChange={(e) => set("diagnosis", e.target.value)}>
+          <option value="">请选择</option>
+          {diagnosisOptions.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="block">
         护理等级
         <select className="mt-1 w-full rounded border px-2 py-1" value={form.nursingLevel} onChange={(e) => set("nursingLevel", e.target.value)}>
-          {LEVELS.map((lv) => (
+          {NURSING_LEVEL_OPTIONS.map((lv) => (
             <option key={lv} value={lv}>
               {lv}
             </option>
@@ -169,11 +201,31 @@ export function BedProfileForm({
       </label>
       <label className="block">
         饮食医嘱
-        <input className="mt-1 w-full rounded border px-2 py-1" value={form.dietOrder} onChange={(e) => set("dietOrder", e.target.value)} />
+        <select className="mt-1 w-full rounded border px-2 py-1" value={form.dietOrder} onChange={(e) => set("dietOrder", e.target.value)}>
+          {dietOptions.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="col-span-2 block">
         过敏史
-        <input className="mt-1 w-full rounded border px-2 py-1" placeholder="无则留空" value={form.allergy} onChange={(e) => set("allergy", e.target.value)} />
+        <select className="mt-1 w-full rounded border px-2 py-1" value={form.allergy || "无"} onChange={(e) => set("allergy", e.target.value)}>
+          {allergyOptions.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block">
+        主诊医生
+        <input className="mt-1 w-full rounded border px-2 py-1" value={form.attendingDoctor} onChange={(e) => set("attendingDoctor", e.target.value)} />
+      </label>
+      <label className="block">
+        管床医生
+        <input className="mt-1 w-full rounded border px-2 py-1" value={form.bedDoctor} onChange={(e) => set("bedDoctor", e.target.value)} />
       </label>
       <label className="block">
         手术日
