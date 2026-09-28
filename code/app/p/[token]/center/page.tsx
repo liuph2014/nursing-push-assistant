@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CenterSearch } from "@/components/CenterSearch";
 import { stayByToken } from "@/lib/queries";
 import { prisma } from "@/lib/prisma";
 
@@ -15,32 +16,24 @@ export default async function CenterPage({ params }: { params: Promise<{ token: 
   }
   if (!stay.consentAcceptedAt) redirect(`/p/${token}/consent`);
   const categories = await prisma.category.findMany({
-    include: { articles: { where: { status: "published", scope: { not: "public_lib" } } } },
+    include: { articles: { where: { status: "published", scope: { notIn: ["public_lib", "hospital"] } } } },
     orderBy: { sortOrder: "asc" },
   });
 
   return (
     <main className="mx-auto max-w-md px-5 py-6">
       <h1 className="font-serif text-3xl text-navy">宣教中心</h1>
-      <p className="mt-1 text-sm text-slate-500">按分类浏览本科室已发布内容，不替代护士推给您的待学习。</p>
-      <div className="mt-4 space-y-4">
-        {categories.map((c) => (
-          <section key={c.id}>
-            <h2 className="font-semibold text-[#1A7A72]">{c.name}</h2>
-            <ul className="mt-1 space-y-2">
-              {c.articles.length === 0 ? <li className="text-sm text-slate-400">暂无</li> : null}
-              {c.articles.map((a) => (
-                <li key={a.id}>
-                  <Link href={`/p/${token}/read/${a.id}`} className="surface block rounded-2xl p-3">
-                    {a.title}
-                    <p className="text-xs text-slate-500">{a.summary}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+      <p className="mt-1 text-sm text-slate-500">
+        {stay.status === "discharged" ? "您已出院，仍可检索浏览科普内容（只读）。" : "按分类浏览本科室已发布内容，也可用上方检索查找疾病知识。"}
+      </p>
+      <CenterSearch
+        token={token}
+        categories={categories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          articles: c.articles.map((a) => ({ id: a.id, title: a.title, summary: a.summary })),
+        }))}
+      />
     </main>
   );
 }
