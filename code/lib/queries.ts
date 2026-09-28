@@ -9,7 +9,6 @@ function openEducation(t: { status: string; contentType: string }) {
 
 export async function listBeds(role: Role, actorId: string) {
   const beds = await prisma.bed.findMany({
-    where: { code: { lte: 8 } },
     orderBy: { code: "asc" },
     include: {
       assignedNurse: true,
@@ -174,6 +173,14 @@ export async function getSettings() {
       consentText: "",
       diseaseZoneName: "脑梗死专区",
       diseaseZoneTagId: "tag-stroke",
+      effectiveReadSeconds: 8,
+      wardJoinToken: "demo-ward",
     }
   );
+}
+
+export async function getReadThresholdMs() {
+  const s = await getSettings();
+  const sec = Number((s as { effectiveReadSeconds?: number }).effectiveReadSeconds ?? 8);
+  return Math.max(1, sec) * 1000;
 }
